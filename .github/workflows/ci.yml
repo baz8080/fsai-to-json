@@ -21,5 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with:
+          # Pinned to the floor: unpinned, uv picks the runner's newest Python, which Pillow has no wheel for yet.
+          python-version: "3.13"
       - run: uv sync --group dev
       - run: uv run pytest
