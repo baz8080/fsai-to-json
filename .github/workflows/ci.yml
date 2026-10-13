@@ -1,15 +1,28 @@
 name: CI
 
 on:
+  # Branches are covered by the pull_request trigger; push only runs for main.
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# A newer push to the same PR/branch supersedes the run in flight (never cancel main).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
+    # Draft PRs skip CI until marked ready for review.
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with:
+          # Pinned to the floor: unpinned, uv picks the runner's newest Python, which Pillow has no wheel for yet.
+          python-version: "3.13"
       - run: uv sync --group dev
       - run: uv run pytest
